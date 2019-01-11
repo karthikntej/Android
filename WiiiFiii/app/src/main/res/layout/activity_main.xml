@@ -10,24 +10,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <Switch
+            android:id="@+id/switchWifi"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:textSize="18sp"
+            android:text="  WiFi" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/enable"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="170dp"
-            android:text="Enable" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/disable"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="237dp"
-            android:text="Disable" />
+        <ListView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/switchWifi"
+            android:layout_marginTop="-3dp" />
 
 
     </RelativeLayout>
