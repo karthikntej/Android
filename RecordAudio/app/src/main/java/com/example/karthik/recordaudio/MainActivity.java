@@ -1,5 +1,6 @@
 package com.example.karthik.recordaudio;
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 
@@ -39,11 +40,15 @@ public class MainActivity extends AppCompatActivity {
     String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
     public static final int RequestPermissionCode = 1;
     MediaPlayer mediaPlayer ;
+    File PlayFolder;
     File RecordFolder;
     ListView listView;
+    ListView responselistView;
 
     ArrayList<String> list = new ArrayList<String>();
+    ArrayList<String> responseList = new ArrayList<String>();
     ArrayAdapter<String> adapter;
+    ArrayAdapter<String> responseAdapter;
 
 
 
@@ -58,21 +63,30 @@ public class MainActivity extends AppCompatActivity {
         buttonPlayLastRecordAudio = (Button) findViewById(R.id.play);
         buttonStopPlayingRecording = (Button)findViewById(R.id.stopPlaying);
         listView = (ListView) findViewById(R.id.recordList);
-
+        responselistView = (ListView) findViewById(R.id.responseList);
         buttonStop.setEnabled(false);
-        buttonPlayLastRecordAudio.setEnabled(false);
+        buttonPlayLastRecordAudio.setEnabled(true);
         buttonStopPlayingRecording.setEnabled(false);
 
         random = new Random();
 
-        RecordFolder = new File (Environment.getExternalStorageDirectory().getAbsolutePath()
-                        + "/" + "RecordFolder") ;
-        if (!RecordFolder.exists()) {
-            RecordFolder.mkdir();
+        PlayFolder = new File (Environment.getExternalStorageDirectory().getAbsolutePath()
+                        + "/" + "PlayFolder") ;
+        if (!PlayFolder.exists()) {
+            PlayFolder.mkdir();
+        }
+
+        RecordFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
+                + "/" + "RecordFolder") ;
+        if (!PlayFolder.exists()) {
+            PlayFolder.mkdir();
         }
 
         adapter = new ArrayAdapter<String>(this, R.layout.list_item, list);
         listView.setAdapter(adapter);
+
+        responseAdapter = new ArrayAdapter<>(this, R.layout.list_item, responseList);
+        responselistView.setAdapter(responseAdapter);
 
         displayAllFiles();
 
@@ -86,19 +100,18 @@ public class MainActivity extends AppCompatActivity {
                     newFileName = CreateRandomAudioFileName(5)  + "AudioRecording.mp3";
                     list.add(newFileName);
 
-                    AudioSavePathInDevice = RecordFolder.getAbsolutePath() + "/" +
+                    AudioSavePathInDevice = PlayFolder.getAbsolutePath() + "/" +
                                     newFileName ;
 
                     MediaRecorderReady();
 
                     try {
+
                         mediaRecorder.prepare();
                         mediaRecorder.start();
                     } catch (IllegalStateException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
 
@@ -123,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                 buttonStart.setEnabled(true);
                 buttonStopPlayingRecording.setEnabled(false);
 
-                Toast.makeText(MainActivity.this, "Recording Completed",
+                Toast.makeText(MainActivity.this, "Recording Stopped",
                         Toast.LENGTH_LONG).show();
 
                 adapter.notifyDataSetChanged();
@@ -140,17 +153,9 @@ public class MainActivity extends AppCompatActivity {
                 buttonPlayLastRecordAudio.setEnabled(false);
                 buttonStopPlayingRecording.setEnabled(true);
 
-
-                mediaPlayer = new MediaPlayer();
-                try {
-                    mediaPlayer.setDataSource(AudioSavePathInDevice);
-                    mediaPlayer.prepare();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                mediaPlayer.start();
-                Toast.makeText(MainActivity.this, "Recording Playing",
+                Intent forMusic = new Intent(getBaseContext(), PlayMusic.class);
+                startService(forMusic);
+                Toast.makeText(MainActivity.this, "Started Playing in Background",
                         Toast.LENGTH_LONG).show();
             }
         });
@@ -163,11 +168,24 @@ public class MainActivity extends AppCompatActivity {
                 buttonStopPlayingRecording.setEnabled(false);
                 buttonPlayLastRecordAudio.setEnabled(true);
 
-                if(mediaPlayer != null){
-                    mediaPlayer.stop();
-                    mediaPlayer.release();
-                    MediaRecorderReady();
+
+
+                stopService(new Intent(getBaseContext(), PlayMusic.class));
+
+                File[] files = RecordFolder.listFiles();
+
+                Log.d("check", ""+files.length);
+                for (int i = 0; i < files.length; i++)
+                {
+                    Log.d("Files", "FileName:" + files[i].getName());
+                    responseList.add(files[i].getName());
                 }
+
+                responseAdapter.notifyDataSetChanged();
+
+
+                Toast.makeText(MainActivity.this, "Stopped Playing",
+                        Toast.LENGTH_LONG).show();
             }
         });
 
@@ -175,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                String recordName = RecordFolder.getAbsolutePath() + "/" +
+                String recordName = PlayFolder.getAbsolutePath() + "/" +
                         ((TextView)view).getText().toString();
 
                 buttonStop.setEnabled(false);
@@ -193,12 +211,37 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 mediaPlayer.start();
-                Toast.makeText(MainActivity.this, "Recording Playing",
-                        Toast.LENGTH_LONG).show();
+
 
 
             }
         });
+
+        responselistView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                String recordName = RecordFolder.getAbsolutePath() + "/" +
+                        ((TextView)view).getText().toString();
+
+                Log.d("check", "playing the respoinse");
+
+
+                mediaPlayer = new MediaPlayer();
+                try {
+                    mediaPlayer.setDataSource(recordName);
+                    mediaPlayer.prepare();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                mediaPlayer.start();
+
+
+
+            }
+        });
+
 
 
 
@@ -207,9 +250,9 @@ public class MainActivity extends AppCompatActivity {
     private void displayAllFiles() {
 
 
-        File[] files = RecordFolder.listFiles();
+        File[] files = PlayFolder.listFiles();
 
-
+        Log.d("check", ""+files.length);
         for (int i = 0; i < files.length; i++)
         {
             Log.d("Files", "FileName:" + files[i].getName());
@@ -226,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
         mediaRecorder.setOutputFile(AudioSavePathInDevice);
+        mediaRecorder.setMaxDuration(5000);
     }
 
     public String CreateRandomAudioFileName(int string){
@@ -275,4 +319,5 @@ public class MainActivity extends AppCompatActivity {
         return result == PackageManager.PERMISSION_GRANTED &&
                 result1 == PackageManager.PERMISSION_GRANTED;
     }
+
 }
